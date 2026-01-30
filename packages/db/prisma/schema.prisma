@@ -1,0 +1,348 @@
+// @file schema.prisma
+// @author Balaji Koneti
+// @linkedin https://www.linkedin.com/in/balaji-koneti/
+// @github https://github.com/KonetiBalaji/kwalifai
+// 
+// Copyright (C) 2026 Balaji Koneti
+// All Rights Reserved.
+// 
+// This software is proprietary and confidential.
+// Unauthorized copying, modification, distribution, or use is prohibited.
+//
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String     @id @default(uuid())
+  email         String     @unique
+  phone         String?    @unique
+  passwordHash  String     @map("password_hash")
+  firstName     String?    @map("first_name")
+  lastName      String?    @map("last_name")
+  status        UserStatus @default(PENDING)
+  emailVerified Boolean    @default(false) @map("email_verified")
+  phoneVerified Boolean    @default(false) @map("phone_verified")
+
+  // Tenant fields (for future multi-tenant support)
+  brokerId      String? @map("broker_id")
+  loanOfficerId String? @map("loan_officer_id")
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  verificationCodes   VerificationCode[]
+  refreshTokens       RefreshToken[]
+  calculatorScenarios CalculatorScenario[]
+  rateAlerts          RateAlert[]
+  statements          Statement[]
+
+  @@index([email])
+  @@index([phone])
+  @@index([brokerId])
+  @@index([loanOfficerId])
+  @@index([status])
+  @@map("users")
+}
+
+model VerificationCode {
+  id        String           @id @default(uuid())
+  userId    String           @map("user_id")
+  type      VerificationType
+  codeHash  String           @map("code_hash")
+  expiresAt DateTime         @map("expires_at")
+  usedAt    DateTime?        @map("used_at")
+  attempts  Int              @default(0)
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+  @@index([expiresAt])
+  @@index([usedAt])
+  @@map("verification_codes")
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  tokenHash String    @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+  userAgent String?   @map("user_agent")
+  ipAddress String?   @map("ip_address")
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tokenHash])
+  @@index([expiresAt])
+  @@index([revokedAt])
+  @@map("refresh_tokens")
+}
+
+enum UserStatus {
+  PENDING
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum VerificationType {
+  EMAIL
+  PHONE
+  PASSWORD_RESET
+}
+
+enum CalculatorType {
+  MORTGAGE
+  REFINANCE
+  AFFORDABILITY
+  AMORTIZATION
+}
+
+enum RateAlertStatus {
+  ACTIVE
+  TRIGGERED
+  INACTIVE
+  EXPIRED
+}
+
+model CalculatorScenario {
+  id      String         @id @default(uuid())
+  userId  String         @map("user_id")
+  type    CalculatorType
+  name    String? // User-provided name for the scenario
+  inputs  Json // Calculator inputs (loan amount, rate, term, etc.)
+  results Json // Calculated results (monthly payment, total interest, etc.)
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+  @@index([createdAt])
+  @@map("calculator_scenarios")
+}
+
+model RateAlert {
+  id                String          @id @default(uuid())
+  userId            String?         @map("user_id")
+  email             String
+  firstName         String?         @map("first_name")
+  lastName          String?         @map("last_name")
+  phone             String?
+  loanType          String          @map("loan_type")
+  targetRate        Float           @map("target_rate")
+  loanAmount        Float?          @map("loan_amount")
+  propertyAddress   String?         @map("property_address")
+  timeframe         String          @default("90 days")
+  status            RateAlertStatus @default(ACTIVE)
+  notificationsSent Int             @default(0) @map("notifications_sent")
+  lastChecked       DateTime        @default(now()) @map("last_checked")
+  triggeredAt       DateTime?       @map("triggered_at")
+  idempotencyKey    String?         @unique @map("idempotency_key")
+
+  // Tenant fields
+  brokerId      String? @map("broker_id")
+  loanOfficerId String? @map("loan_officer_id")
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user          User?                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  notifications RateAlertNotification[]
+
+  @@index([email])
+  @@index([userId])
+  @@index([status])
+  @@index([loanType])
+  @@index([targetRate])
+  @@index([createdAt])
+  @@index([brokerId])
+  @@index([loanOfficerId])
+  @@index([idempotencyKey])
+  @@map("rate_alerts")
+}
+
+model RateAlertNotification {
+  id          String   @id @default(uuid())
+  rateAlertId String   @map("rate_alert_id")
+  currentRate Float    @map("current_rate")
+  message     String
+  sentAt      DateTime @default(now()) @map("sent_at")
+
+  // Relations
+  rateAlert RateAlert @relation(fields: [rateAlertId], references: [id], onDelete: Cascade)
+
+  @@index([rateAlertId])
+  @@index([sentAt])
+  @@map("rate_alert_notifications")
+}
+
+model Lead {
+  id              String   @id @default(uuid())
+  email           String
+  firstName       String?  @map("first_name")
+  lastName        String?  @map("last_name")
+  phone           String?
+  propertyAddress String?  @map("property_address")
+  loanAmount      Float?   @map("loan_amount")
+  loanType        String?  @map("loan_type")
+  targetRate      Float?   @map("target_rate")
+  leadSource      String   @map("lead_source")
+  leadScore       Int      @default(0) @map("lead_score")
+  status          String   @default("new")
+  alertId         String?  @map("alert_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@index([email])
+  @@index([status])
+  @@index([leadSource])
+  @@index([createdAt])
+  @@index([alertId])
+  @@map("leads")
+}
+
+enum StatementStatus {
+  UPLOADED
+  PROCESSING
+  ANALYZED
+  FAILED
+}
+
+enum StatementSource {
+  MANUAL
+  OCR
+  API
+}
+
+model Statement {
+  id            String          @id @default(uuid())
+  userId        String?         @map("user_id")
+  sessionId     String?         @map("session_id")
+  status        StatementStatus  @default(UPLOADED)
+  source        StatementSource  @default(MANUAL)
+  idempotencyKey String?        @unique @map("idempotency_key")
+
+  // Customer information (from form or extracted)
+  customerName  String?          @map("customer_name")
+  customerEmail String?          @map("customer_email")
+  customerPhone String?          @map("customer_phone")
+
+  // Tenant fields
+  brokerId      String?          @map("broker_id")
+  loanOfficerId String?          @map("loan_officer_id")
+
+  // Timestamps
+  createdAt     DateTime         @default(now()) @map("created_at")
+  updatedAt     DateTime         @updatedAt @map("updated_at")
+
+  // Relations
+  user          User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  files         StatementFile[]
+  analyses      StatementAnalysis[]
+
+  @@index([userId])
+  @@index([sessionId])
+  @@index([status])
+  @@index([brokerId])
+  @@index([loanOfficerId])
+  @@index([idempotencyKey])
+  @@index([createdAt])
+  @@map("statements")
+}
+
+model StatementFile {
+  id            String    @id @default(uuid())
+  statementId   String    @map("statement_id")
+  filename      String    // Stored filename (e.g., mortgage-statement-1234567890.pdf)
+  originalName  String    @map("original_name") // Original filename from upload
+  path          String    // File system path or S3 key
+  size          Int       // File size in bytes
+  mimetype      String    // MIME type (application/pdf, image/jpeg, etc.)
+  storageType   String    @default("local") @map("storage_type") // local, s3, gcs
+
+  // Timestamps
+  uploadedAt    DateTime  @default(now()) @map("uploaded_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  statement     Statement @relation(fields: [statementId], references: [id], onDelete: Cascade)
+
+  @@index([statementId])
+  @@index([uploadedAt])
+  @@map("statement_files")
+}
+
+enum AnalysisVersion {
+  V1
+  V2_OCR
+  V3_AI
+}
+
+model StatementAnalysis {
+  id            String          @id @default(uuid())
+  statementId   String          @map("statement_id")
+  version       AnalysisVersion @default(V1)
+  
+  // Input data (manual or extracted)
+  currentBalance    Float?   @map("current_balance")
+  currentRate       Float?   @map("current_rate")
+  monthlyPayment    Float?   @map("monthly_payment")
+  propertyAddress   String?  @map("property_address")
+  lenderName        String?  @map("lender_name")
+  escrowBalance     Float?   @map("escrow_balance")
+  loanNumber        String?  @map("loan_number")
+  nextPaymentDate   String?  @map("next_payment_date")
+
+  // Analysis results (JSON for flexibility)
+  results       Json      // Full analysis output matching legacy format
+
+  // Metadata
+  isActive      Boolean   @default(true) @map("is_active")
+  errorMessage  String?   @map("error_message")
+
+  // Timestamps
+  analyzedAt    DateTime  @default(now()) @map("analyzed_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  statement     Statement @relation(fields: [statementId], references: [id], onDelete: Cascade)
+
+  @@index([statementId])
+  @@index([version])
+  @@index([isActive])
+  @@index([analyzedAt])
+  @@map("statement_analyses")
+}

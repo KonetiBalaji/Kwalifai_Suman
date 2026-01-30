@@ -1,0 +1,26 @@
+{
+  "name": "@mortgage-platform/db",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:studio": "prisma studio",
+    "db:seed": "tsx src/seed.ts",
+    "build": "tsc",
+    "lint": "eslint src --ext .ts",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.9.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "prisma": "^5.9.1",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  }
+}

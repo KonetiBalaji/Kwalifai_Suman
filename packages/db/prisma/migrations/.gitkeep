@@ -1,0 +1,2 @@
+# This directory contains Prisma migrations
+# Migrations will be generated here when you run: pnpm db:migrate
