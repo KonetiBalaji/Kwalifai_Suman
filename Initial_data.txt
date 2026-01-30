@@ -1,0 +1,68 @@
+Initial requirement:
+
+I have a small Node.js/Express app already running on Heroku. I’m not a developer, and I need help making it production‑ready over the next 3–5 days. Scope: Refactor backend code (no new features) Keep all existing routes and behavior. Break one large server file into smaller modules (routes, services, utilities). Add PostgreSQL database Use Heroku Postgres. Store users/leads and rate alerts instead of keeping everything in memory. Email notifications with SendGrid I already have a SendGrid account and API key. Send a confirmation email when someone signs up for alerts. Prepare for daily rate/news updates Centralize current rate logic in one module. Centralize news logic in one module. Add a simple schedule/structure so a real data source can be plugged in later. Requirements: Strong experience with: Node.js + Express Heroku deployment and config PostgreSQL (preferably Heroku Postgres) SendGrid email integration Ability to explain things in simple, non‑technical language. Must keep all existing functionality working while refactoring. Timeline: 3–5 working days from start. Please send: 1–2 examples of similar Node.js + Heroku + Postgres work. Brief explanation (in plain English) of how you’d: Organize the code into modules, Add Postgres without breaking existing endpoints, Wire in SendGrid.
+
+I want the app to stay consumer‑focused today, but the backend and data model must be designed so that in the future we can:
+
+Have multiple mortgage brokers (companies) using the same platform.
+
+Each broker has their own landing page and can add multiple loan officers.
+
+Independent loan officers (not tied to a broker) can also sign up and have their own landing page.
+
+Consumers can either use the general site or a specific broker/officer page.
+
+These multi‑tenant features (brokers, loan officers, branded pages, etc.) can come later in version 2.0, but the database and API design today should not block that.
+
+Design the data model with tenants in mind
+
+Even if you don’t expose this in the UI yet, include tables/fields like:
+
+brokers (id, name, branding, contact info)
+
+loan_officers (id, name, email, broker_id nullable)
+
+users / leads with optional broker_id and loan_officer_id
+
+rate_alerts tied to user_email AND optionally broker_id / loan_officer_id
+
+This way, every lead or alert can later be associated with a broker/loan officer without a redesign.
+
+Keep routes flexible for per‑tenant pages
+
+Plan URLs like:
+
+/ – general consumer site
+
+/b/:brokerSlug – broker landing page
+
+/lo/:loanOfficerSlug – loan officer landing page
+
+For now, they can all render the same UI and logic, but the routing structure should allow per‑tenant pages later.
+
+Make the core features tenant‑aware (in code, not UI)
+
+Rate alerts, calculators, chat, etc. should be written so they can optionally take a brokerId / loanOfficerId.
+
+Example: createRateAlert({ email, loanType, targetRate, brokerId, loanOfficerId }) – even if you currently pass null for those.
+
+Separate “core engine” vs. “tenant branding”
+
+Core engine: calculators, rate alerts logic, AI/chat, database operations.
+
+Tenant/branding layer: which logo, colors, and default contact info to show.
+
+Ask them to keep branding and content in config or DB (e.g., brokers.theme) instead of hard‑coding for only one brand.
+
+Use a clean modular structure
+
+Group by feature rather than by “consumer vs broker”:
+
+/services/ – calculators, rate alerts, notifications
+
+/models/ – users, brokers, loan_officers, alerts
+
+/routes/ – auth, calculators, alerts, tenant pages
+
+This will make it much easier to add broker/LO‑specific logic later without touching core pieces.
+

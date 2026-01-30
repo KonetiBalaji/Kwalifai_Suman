@@ -1,0 +1,1020 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{amsmath}
+
+\geometry{margin=1in}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+    pdftitle={Mortgage Platform AWS Deployment Documentation},
+    pdfauthor={Kwalifai Platform},
+    pdfsubject={AWS Deployment Strategy and Cost Analysis}
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{Mortgage Platform - AWS Deployment}
+\fancyhead[R]{\thepage}
+\fancyfoot[C]{Confidential - Kwalifai Platform}
+
+\title{\textbf{Mortgage Platform: Features, AWS Deployment Strategy, and Cost Analysis}}
+\author{Kwalifai Platform Development Team}
+\date{\today}
+
+\lstset{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    backgroundcolor=\color{gray!10},
+    language=bash
+}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{fancy}
+
+\tableofcontents
+\newpage
+
+\section{Executive Summary}
+
+This document provides a comprehensive overview of the Kwalifai Mortgage Platform, detailing all features, AWS deployment architecture, service selection rationale, and cost estimates. The platform is a microservices-based mortgage solution offering calculators, rate alerts, statement analysis, and AI-powered mortgage assistance.
+
+\section{Platform Overview}
+
+\subsection{Architecture}
+
+The platform follows a microservices architecture pattern with the following components:
+
+\begin{itemize}
+    \item \textbf{Frontend}: Next.js 14 application with App Router, TypeScript, and Tailwind CSS
+    \item \textbf{API Gateway}: Single entry point routing requests to backend services
+    \item \textbf{Auth Service}: User authentication and authorization with JWT tokens
+    \item \textbf{Calculator Service}: Mortgage payment calculations and scenario management
+    \item \textbf{Rate Alert Service}: Interest rate monitoring and notification system
+    \item \textbf{Statement Analysis Service}: Mortgage statement upload, storage, and analysis
+    \item \textbf{AI Service (LOWI)}: AI-powered mortgage assistant with OpenAI integration
+    \item \textbf{Database}: PostgreSQL with Prisma ORM
+    \item \textbf{Shared Packages}: Common TypeScript types, utilities, and constants
+\end{itemize}
+
+\subsection{Technology Stack}
+
+\begin{itemize}
+    \item \textbf{Frontend}: Next.js 14, React 18, TypeScript, Tailwind CSS
+    \item \textbf{Backend}: Node.js, Express.js, TypeScript
+    \item \textbf{Database}: PostgreSQL with Prisma ORM
+    \item \textbf{Package Manager}: pnpm workspaces
+    \item \textbf{AI Integration}: OpenAI GPT-4 (via AI Service)
+    \item \textbf{Email}: SendGrid (planned) / AWS SES (recommended)
+\end{itemize}
+
+\section{Feature Documentation}
+
+\subsection{1. Smart Mortgage Calculators}
+
+\subsubsection{Features}
+\begin{itemize}
+    \item \textbf{Mortgage Calculator}: Calculate monthly payments, total interest, and amortization schedules
+    \item \textbf{Affordability Calculator}: Determine maximum affordable loan amount based on income
+    \item \textbf{Refinance Calculator}: Compare current mortgage with refinancing options
+    \item \textbf{Amortization Calculator}: Generate detailed payment schedules over loan term
+    \item \textbf{Scenario Saving}: Save and retrieve calculation scenarios for authenticated users
+    \item \textbf{Multi-Scenario Comparison}: Compare up to four loan options side-by-side
+\end{itemize}
+
+\subsubsection{Technical Implementation}
+\begin{itemize}
+    \item Service: \texttt{calculator-service} (Port 3003)
+    \item Endpoints:
+    \begin{itemize}
+        \item \texttt{POST /api/v1/calculator/mortgage}
+        \item \texttt{POST /api/v1/calculator/affordability}
+        \item \texttt{POST /api/v1/calculator/scenarios}
+        \item \texttt{GET /api/v1/calculator/scenarios}
+        \item \texttt{GET /api/v1/calculator/scenarios/:id}
+        \item \texttt{DELETE /api/v1/calculator/scenarios/:id}
+    \end{itemize}
+    \item Rate Limiting: 50 requests per 15 minutes per IP
+    \item Database: \texttt{CalculatorScenario} model stores user scenarios
+\end{itemize}
+
+\subsection{2. Rate Alerts System}
+
+\subsubsection{Features}
+\begin{itemize}
+    \item \textbf{Target Rate Monitoring}: Set target interest rates for specific loan types
+    \item \textbf{Automated Notifications}: Receive alerts when rates drop to target threshold
+    \item \textbf{Multiple Loan Types}: Support for 30-Year Fixed, 15-Year Fixed, FHA, VA, USDA, Jumbo, ARM
+    \item \textbf{Lead Generation}: Automatic lead creation with high lead score (85) when alerts are created
+    \item \textbf{Alert Management}: Create, view, update, and deactivate rate alerts
+    \item \textbf{Idempotency}: Safe retry mechanism using idempotency keys
+    \item \textbf{Multi-Tenant Support}: Broker and loan officer context tracking
+\end{itemize}
+
+\subsubsection{Technical Implementation}
+\begin{itemize}
+    \item Service: \texttt{rate-alert-service} (Port 3004)
+    \item Endpoints:
+    \begin{itemize}
+        \item \texttt{POST /api/v1/rate-alerts}
+        \item \texttt{GET /api/v1/rate-alerts}
+        \item \texttt{GET /api/v1/rate-alerts/:id}
+        \item \texttt{PUT /api/v1/rate-alerts/:id}
+        \item \texttt{DELETE /api/v1/rate-alerts/:id}
+    \end{itemize}
+    \item Database: \texttt{RateAlert} and \texttt{RateAlertNotification} models
+    \item Background Jobs: Rate monitoring service checks rates periodically
+    \item Notification Channels: Email (SendGrid/SES), SMS (future), In-app (future)
+\end{itemize}
+
+\subsection{3. Statement Analysis Service}
+
+\subsubsection{Features}
+\begin{itemize}
+    \item \textbf{Statement Upload}: Accept PDF/image uploads via multipart form data
+    \item \textbf{Manual Data Entry}: Form-based input for statement details
+    \item \textbf{Refinance Analysis}: Calculate potential savings and break-even points
+    \item \textbf{Market Comparison}: Compare current rate with market rates
+    \item \textbf{Recommendations}: AI-powered refinancing recommendations
+    \item \textbf{Versioned Analysis}: Support for V1 (manual), V2 (OCR - planned), V3 (AI - planned)
+    \item \textbf{File Storage}: Local filesystem (current), S3/GCS ready (future)
+    \item \textbf{Session Support}: Track anonymous user sessions
+\end{itemize}
+
+\subsubsection{Technical Implementation}
+\begin{itemize}
+    \item Service: \texttt{statement-analysis-service} (Port 3005)
+    \item Endpoints:
+    \begin{itemize}
+        \item \texttt{POST /api/upload-statement}
+        \item \texttt{GET /api/statement/:id}
+    \end{itemize}
+    \item Database: \texttt{Statement}, \texttt{StatementFile}, \texttt{StatementAnalysis} models
+    \item File Storage: Abstracted provider interface (Local/S3/GCS)
+    \item Analysis Engine: Versioned architecture for future OCR and AI integration
+    \item Rate Limiting: 20 uploads per 15 minutes per IP
+\end{itemize}
+
+\subsection{4. AI-Powered Mortgage Assistant (LOWI)}
+
+\subsubsection{Features}
+\begin{itemize}
+    \item \textbf{Natural Language Chat}: Conversational interface for mortgage questions
+    \item \textbf{Intent Classification}: Understands user queries and routes to appropriate tools
+    \item \textbf{Integrated Tools}: 
+    \begin{itemize}
+        \item Run mortgage calculators
+        \item Get current mortgage rates
+        \item Create rate alerts
+        \item Analyze statements
+        \item Get user profile information
+        \item List user's rate alerts
+        \item Save calculations
+    \end{itemize}
+    \item \textbf{Guardrails}: Content filtering, response validation, audit logging
+    \item \textbf{Fallback System}: Graceful degradation when AI service is unavailable
+    \item \textbf{Session Management}: Maintains conversation context
+    \item \textbf{Correlation Tracking}: Request tracing for debugging
+\end{itemize}
+
+\subsubsection{Technical Implementation}
+\begin{itemize}
+    \item Service: \texttt{ai-service} (Port 3006)
+    \item Endpoints:
+    \begin{itemize}
+        \item \texttt{POST /api/v1/chat}
+        \item \texttt{GET /api/v1/chat} (health check)
+    \end{itemize}
+    \item AI Provider: OpenAI GPT-4 (configurable model)
+    \item Tools: Function calling with OpenAI
+    \item Middleware: Rate limiting, authentication, correlation ID, audit logging
+    \item Scheduler: Background task processing for async operations
+\end{itemize}
+
+\subsection{5. Authentication and Authorization}
+
+\subsubsection{Features}
+\begin{itemize}
+    \item \textbf{User Registration}: Email and phone-based registration
+    \item \textbf{Email Verification}: OTP-based email verification
+    \item \textbf{Phone Verification}: OTP-based phone verification
+    \item \textbf{Password Reset}: Secure password reset flow
+    \item \textbf{JWT Tokens}: Access and refresh token mechanism
+    \item \textbf{Session Management}: Refresh token rotation and revocation
+    \item \textbf{Multi-Factor Authentication}: Support for MFA (future)
+    \item \textbf{User Status Management}: PENDING, ACTIVE, INACTIVE, SUSPENDED, DELETED
+\end{itemize}
+
+\subsubsection{Technical Implementation}
+\begin{itemize}
+    \item Service: \texttt{auth-service} (Port 3002)
+    \item Endpoints:
+    \begin{itemize}
+        \item \texttt{POST /api/v1/auth/register}
+        \item \texttt{POST /api/v1/auth/verify-email}
+        \item \texttt{POST /api/v1/auth/verify-phone}
+        \item \texttt{POST /api/v1/auth/login}
+        \item \texttt{POST /api/v1/auth/refresh}
+        \item \texttt{POST /api/v1/auth/logout}
+    \end{itemize}
+    \item Security: bcrypt password hashing, JWT signing, secure token storage
+    \item Database: \texttt{User}, \texttt{VerificationCode}, \texttt{RefreshToken} models
+\end{itemize}
+
+\subsection{6. API Gateway}
+
+\subsubsection{Features}
+\begin{itemize}
+    \item \textbf{Single Entry Point}: All API requests routed through gateway
+    \item \textbf{Request Routing}: Intelligent routing to appropriate microservices
+    \item \textbf{Correlation ID}: Request tracing across services
+    \item \textbf{Rate Limiting}: Global rate limiting (100 req/15min per IP)
+    \item \textbf{CORS Management}: Configurable CORS policies
+    \item \textbf{Swagger Documentation}: Interactive API documentation
+    \item \textbf{Health Checks}: Service health and readiness monitoring
+    \item \textbf{Tenant Resolution}: Multi-tenant support with broker/loan officer context
+\end{itemize}
+
+\subsubsection{Technical Implementation}
+\begin{itemize}
+    \item Service: \texttt{api-gateway} (Port 3001)
+    \item Technology: Express.js with http-proxy-middleware
+    \item Middleware: Correlation ID, rate limiting, tenant resolution, proxy
+    \item Documentation: Swagger/OpenAPI 3.0
+\end{itemize}
+
+\section{AWS Deployment Architecture}
+
+\subsection{Recommended AWS Services}
+
+\subsubsection{Compute Services}
+
+\paragraph{Amazon ECS with Fargate}
+\begin{itemize}
+    \item \textbf{Purpose}: Container orchestration for microservices
+    \item \textbf{Why ECS Fargate}:
+    \begin{itemize}
+        \item Serverless container management (no EC2 management)
+        \item Automatic scaling based on demand
+        \item Cost-effective for variable workloads
+        \item Integrated with other AWS services
+        \item Simpler than EKS for this use case
+    \end{itemize}
+    \item \textbf{Why Not EKS}: 
+    \begin{itemize}
+        \item Overkill for current scale
+        \item Higher operational complexity
+        \item More expensive (control plane costs)
+        \item Requires Kubernetes expertise
+    \end{itemize}
+    \item \textbf{Why Not EC2 Direct}:
+    \begin{itemize}
+        \item Manual scaling and management overhead
+        \item Less efficient resource utilization
+        \item Requires infrastructure management
+    \end{itemize}
+    \item \textbf{Why Not Lambda}:
+    \begin{itemize}
+        \item Cold start latency for some services
+        \item 15-minute execution limit
+        \item Not ideal for long-running connections (WebSockets, if needed)
+        \item Container services better for consistent workloads
+    \end{itemize}
+\end{itemize}
+
+\paragraph{Application Load Balancer (ALB)}
+\begin{itemize}
+    \item \textbf{Purpose}: Distribute traffic across services
+    \item \textbf{Why ALB}:
+    \begin{itemize}
+        \item Layer 7 routing (path-based, host-based)
+        \item SSL/TLS termination
+        \item Health checks and auto-scaling integration
+        \item WAF integration for security
+    \end{itemize}
+    \item \textbf{Why Not Classic Load Balancer}:
+    \begin{itemize}
+        \item Legacy service, less features
+        \item No path-based routing
+    \end{itemize}
+    \item \textbf{Why Not NLB}:
+    \begin{itemize}
+        \item Layer 4 only, no HTTP/HTTPS features
+        \item Less suitable for API routing
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Database Services}
+
+\paragraph{Amazon RDS PostgreSQL}
+\begin{itemize}
+    \item \textbf{Purpose}: Managed PostgreSQL database
+    \item \textbf{Why RDS}:
+    \begin{itemize}
+        \item Automated backups and point-in-time recovery
+        \item Automatic patching and updates
+        \item Multi-AZ for high availability
+        \item Read replicas for scaling reads
+        \item Encryption at rest and in transit
+        \item Managed maintenance windows
+    \end{itemize}
+    \item \textbf{Why Not Aurora}:
+    \begin{itemize}
+        \item Higher cost (2x-3x more expensive)
+        \item Overkill for initial scale
+        \item Can migrate later if needed
+    \end{itemize}
+    \item \textbf{Why Not Self-Managed EC2}:
+    \begin{itemize}
+        \item Operational overhead (backups, patching, monitoring)
+        \item Higher risk of downtime
+        \item Requires database administration expertise
+    \end{itemize}
+    \item \textbf{Why Not DynamoDB}:
+    \begin{itemize}
+        \item NoSQL doesn't fit relational data model
+        \item Prisma ORM requires SQL database
+        \item Complex queries and joins needed
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Storage Services}
+
+\paragraph{Amazon S3}
+\begin{itemize}
+    \item \textbf{Purpose}: File storage for mortgage statements
+    \item \textbf{Why S3}:
+    \begin{itemize}
+        \item 99.999999999\% (11 9's) durability
+        \item Virtually unlimited scalability
+        \item Cost-effective storage tiers
+        \item Lifecycle policies for archival
+        \item Versioning and encryption
+        \item CDN integration (CloudFront)
+    \end{itemize}
+    \item \textbf{Why Not EBS}:
+    \begin{itemize}
+        \item Attached to single EC2 instance
+        \item Not suitable for shared file storage
+        \item Limited scalability
+    \end{itemize}
+    \item \textbf{Why Not EFS}:
+    \begin{itemize}
+        \item More expensive than S3
+        \item Overkill for file uploads
+        \item Better for shared filesystem needs
+    \end{itemize}
+    \item \textbf{Why Not Glacier}:
+    \begin{itemize}
+        \item Too slow for active file access
+        \item Better for long-term archival
+        \item Can use S3 lifecycle to Glacier
+    \end{itemize}
+\end{itemize}
+
+\paragraph{Amazon CloudFront}
+\begin{itemize}
+    \item \textbf{Purpose}: CDN for frontend and static assets
+    \item \textbf{Why CloudFront}:
+    \begin{itemize}
+        \item Global edge locations for low latency
+        \item SSL/TLS termination
+        \item DDoS protection
+        \item Cost-effective data transfer
+        \item Integration with S3 and ALB
+    \end{itemize}
+    \item \textbf{Why Not Other CDNs}:
+    \begin{itemize}
+        \item Better AWS integration
+        \item Unified billing and management
+        \item Competitive pricing
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Networking Services}
+
+\paragraph{Amazon VPC}
+\begin{itemize}
+    \item \textbf{Purpose}: Isolated network environment
+    \item \textbf{Configuration}:
+    \begin{itemize}
+        \item Public subnets for ALB
+        \item Private subnets for ECS tasks
+        \item Private subnets for RDS
+        \item NAT Gateway for outbound internet access
+    \end{itemize}
+\end{itemize}
+
+\paragraph{Amazon Route 53}
+\begin{itemize}
+    \item \textbf{Purpose}: DNS management
+    \item \textbf{Why Route 53}:
+    \begin{itemize}
+        \item Integrated with AWS services
+        \item Health checks and failover
+        \item Low latency DNS resolution
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Security Services}
+
+\paragraph{AWS Secrets Manager}
+\begin{itemize}
+    \item \textbf{Purpose}: Store sensitive configuration (API keys, DB passwords)
+    \item \textbf{Why Secrets Manager}:
+    \begin{itemize}
+        \item Automatic rotation support
+        \item Fine-grained access control
+        \item Audit logging
+        \item Integration with ECS
+    \end{itemize}
+    \item \textbf{Why Not Parameter Store}:
+    \begin{itemize}
+        \item Secrets Manager better for secrets (encryption, rotation)
+        \item Parameter Store better for non-sensitive config
+    \end{itemize}
+\end{itemize}
+
+\paragraph{AWS WAF}
+\begin{itemize}
+    \item \textbf{Purpose}: Web application firewall
+    \item \textbf{Why WAF}:
+    \begin{itemize}
+        \item Protection against common attacks (SQL injection, XSS)
+        \item Rate-based rules
+        \item Geographic restrictions
+        \item Integration with ALB
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Monitoring and Logging}
+
+\paragraph{Amazon CloudWatch}
+\begin{itemize}
+    \item \textbf{Purpose}: Monitoring, logging, and alerting
+    \item \textbf{Why CloudWatch}:
+    \begin{itemize}
+        \item Native AWS integration
+        \item Log aggregation from all services
+        \item Metrics and dashboards
+        \item Alarms and notifications
+        \item Cost-effective for AWS-native monitoring
+    \end{itemize}
+    \item \textbf{Why Not Datadog/New Relic}:
+    \begin{itemize}
+        \item Higher cost (can add later if needed)
+        \item CloudWatch sufficient for initial deployment
+        \item Can integrate third-party tools later
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Email Services}
+
+\paragraph{Amazon SES}
+\begin{itemize}
+    \item \textbf{Purpose}: Transactional emails (verification, notifications)
+    \item \textbf{Why SES}:
+    \begin{itemize}
+        \item Cost-effective (\$0.10 per 1,000 emails)
+        \item High deliverability
+        \item Integration with other AWS services
+        \item Better than SendGrid for AWS-native stack
+    \end{itemize}
+    \item \textbf{Why Not SendGrid}:
+    \begin{itemize}
+        \item Additional external dependency
+        \item Less integrated with AWS ecosystem
+        \item Similar pricing, but SES is more integrated
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Background Jobs}
+
+\paragraph{AWS Lambda}
+\begin{itemize}
+    \item \textbf{Purpose}: Rate monitoring and scheduled tasks
+    \item \textbf{Why Lambda}:
+    \begin{itemize}
+        \item Serverless, pay-per-execution
+        \item EventBridge integration for scheduling
+        \item Cost-effective for periodic tasks
+        \item No infrastructure management
+    \end{itemize}
+    \item \textbf{Why Not ECS Scheduled Tasks}:
+    \begin{itemize}
+        \item Lambda simpler for simple scheduled jobs
+        \item Lower cost for infrequent tasks
+        \item Can use ECS if tasks become complex
+    \end{itemize}
+\end{itemize}
+
+\paragraph{Amazon EventBridge}
+\begin{itemize}
+    \item \textbf{Purpose}: Schedule rate monitoring jobs
+    \item \textbf{Why EventBridge}:
+    \begin{itemize}
+        \item Serverless event scheduling
+        \item Cron-like scheduling
+        \item Integration with Lambda
+    \end{itemize}
+\end{itemize}
+
+\subsection{Deployment Architecture Diagram}
+
+\begin{verbatim}
+┌─────────────────────────────────────────────────────────────┐
+│                    CloudFront (CDN)                          │
+│              (Frontend Static Assets)                        │
+└────────────────────┬────────────────────────────────────────┘
+                     │
+                     ▼
+┌─────────────────────────────────────────────────────────────┐
+│              Application Load Balancer (ALB)                 │
+│              + AWS WAF (Security)                             │
+└──────┬───────────────────────────────┬───────────────────────┘
+       │                               │
+       ▼                               ▼
+┌──────────────────┐         ┌──────────────────────┐
+│   ECS Fargate    │         │    ECS Fargate       │
+│   (Frontend)     │         │  (API Gateway)       │
+│   Next.js App    │         │  Express Service     │
+└──────────────────┘         └──────┬───────────────┘
+                                    │
+                    ┌───────────────┼───────────────┐
+                    │               │               │
+                    ▼               ▼               ▼
+         ┌──────────────┐  ┌──────────────┐  ┌──────────────┐
+         │ ECS Fargate  │  │ ECS Fargate  │  │ ECS Fargate  │
+         │ Auth Service │  │ Calculator   │  │ Rate Alert   │
+         └──────────────┘  │ Service      │  │ Service      │
+                           └──────────────┘  └──────────────┘
+                                    │
+                    ┌───────────────┼───────────────┐
+                    │               │               │
+                    ▼               ▼               ▼
+         ┌──────────────┐  ┌──────────────┐  ┌──────────────┐
+         │ ECS Fargate  │  │ ECS Fargate  │  │   Lambda     │
+         │ Statement    │  │ AI Service   │  │ Rate Monitor │
+         │ Analysis     │  │ (LOWI)       │  │ (Scheduled)   │
+         └──────────────┘  └──────────────┘  └──────────────┘
+                    │
+                    ▼
+         ┌──────────────────────┐
+         │   Amazon RDS          │
+         │   PostgreSQL          │
+         │   (Multi-AZ)          │
+         └──────────────────────┘
+                    │
+                    ▼
+         ┌──────────────────────┐
+         │   Amazon S3          │
+         │   (File Storage)     │
+         └──────────────────────┘
+                    │
+                    ▼
+         ┌──────────────────────┐
+         │   Amazon SES         │
+         │   (Email Service)    │
+         └──────────────────────┘
+\end{verbatim}
+
+\section{Deployment Steps}
+
+\subsection{Prerequisites}
+\begin{enumerate}
+    \item AWS Account with appropriate IAM permissions
+    \item AWS CLI configured
+    \item Docker installed locally
+    \item Domain name (optional, for Route 53)
+\end{enumerate}
+
+\subsection{Step 1: Create VPC and Networking}
+\begin{lstlisting}
+# Create VPC with public and private subnets
+# Configure Internet Gateway and NAT Gateway
+# Set up security groups for services
+\end{lstlisting}
+
+\subsection{Step 2: Set Up RDS PostgreSQL}
+\begin{lstlisting}
+# Create RDS PostgreSQL instance
+# Configure Multi-AZ for high availability
+# Set up automated backups
+# Create database and run Prisma migrations
+\end{lstlisting}
+
+\subsection{Step 3: Create S3 Bucket}
+\begin{lstlisting}
+# Create S3 bucket for file storage
+# Configure bucket policies and CORS
+# Set up lifecycle policies for cost optimization
+\end{lstlisting}
+
+\subsection{Step 4: Set Up ECR (Elastic Container Registry)}
+\begin{lstlisting}
+# Create ECR repositories for each service
+# Build and push Docker images
+\end{lstlisting}
+
+\subsection{Step 5: Create ECS Cluster and Services}
+\begin{lstlisting}
+# Create ECS cluster
+# Create task definitions for each service
+# Configure auto-scaling policies
+# Set up service discovery (optional)
+\end{lstlisting}
+
+\subsection{Step 6: Configure Application Load Balancer}
+\begin{lstlisting}
+# Create ALB in public subnets
+# Configure target groups for each service
+# Set up path-based routing rules
+# Configure SSL/TLS certificates (ACM)
+\end{lstlisting}
+
+\subsection{Step 7: Set Up CloudFront}
+\begin{lstlisting}
+# Create CloudFront distribution
+# Point to ALB origin
+# Configure caching policies
+# Set up custom domain (optional)
+\end{lstlisting}
+
+\subsection{Step 8: Configure Secrets Manager}
+\begin{lstlisting}
+# Store database credentials
+# Store API keys (OpenAI, etc.)
+# Store JWT secrets
+# Configure IAM roles for ECS tasks
+\end{lstlisting}
+
+\subsection{Step 9: Set Up Monitoring}
+\begin{lstlisting}
+# Configure CloudWatch log groups
+# Set up CloudWatch alarms
+# Create dashboards for monitoring
+# Configure SNS for alerts
+\end{lstlisting}
+
+\subsection{Step 10: Deploy Lambda Functions}
+\begin{lstlisting}
+# Create Lambda function for rate monitoring
+# Configure EventBridge schedule (hourly)
+# Set up IAM roles and permissions
+\end{lstlisting}
+
+\section{Cost Analysis}
+
+\subsection{Monthly Cost Estimates (US East Region)}
+
+\subsubsection{Compute Costs}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Service} & \textbf{Configuration} & \textbf{Units} & \textbf{Cost/Month} \\
+\midrule
+ECS Fargate (Frontend) & 0.5 vCPU, 1GB RAM & 1 task & \$15 \\
+ECS Fargate (API Gateway) & 0.25 vCPU, 0.5GB RAM & 1 task & \$8 \\
+ECS Fargate (Auth Service) & 0.25 vCPU, 0.5GB RAM & 1 task & \$8 \\
+ECS Fargate (Calculator) & 0.25 vCPU, 0.5GB RAM & 1 task & \$8 \\
+ECS Fargate (Rate Alert) & 0.25 vCPU, 0.5GB RAM & 1 task & \$8 \\
+ECS Fargate (Statement) & 0.5 vCPU, 1GB RAM & 1 task & \$15 \\
+ECS Fargate (AI Service) & 0.5 vCPU, 1GB RAM & 1 task & \$15 \\
+Application Load Balancer & Standard & 1 ALB & \$22 \\
+\bottomrule
+\textbf{Total Compute} & & & \textbf{\$99} \\
+\bottomrule
+\end{tabular}
+\caption{Compute Service Costs}
+\end{table}
+
+\subsubsection{Database Costs}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Service} & \textbf{Configuration} & \textbf{Units} & \textbf{Cost/Month} \\
+\midrule
+RDS PostgreSQL (db.t3.medium) & 2 vCPU, 4GB RAM, 100GB & 1 instance & \$75 \\
+RDS Storage & 100GB GP3 & 100 GB & \$11 \\
+RDS Backup Storage & 100GB & 100 GB & \$11 \\
+\bottomrule
+\textbf{Total Database} & & & \textbf{\$97} \\
+\bottomrule
+\end{tabular}
+\caption{Database Service Costs}
+\end{table}
+
+\subsubsection{Storage and CDN Costs}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Service} & \textbf{Configuration} & \textbf{Usage} & \textbf{Cost/Month} \\
+\midrule
+S3 Standard Storage & First 50TB & 10 GB & \$0.23 \\
+S3 PUT Requests & & 10,000 requests & \$0.05 \\
+S3 GET Requests & & 100,000 requests & \$0.40 \\
+CloudFront Data Transfer & & 100 GB & \$8.50 \\
+CloudFront Requests & & 1M requests & \$0.75 \\
+\bottomrule
+\textbf{Total Storage/CDN} & & & \textbf{\$9.93} \\
+\bottomrule
+\end{tabular}
+\caption{Storage and CDN Costs}
+\end{table}
+
+\subsubsection{Networking Costs}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Service} & \textbf{Configuration} & \textbf{Usage} & \textbf{Cost/Month} \\
+\midrule
+NAT Gateway & Standard & 1 gateway & \$32.40 \\
+NAT Gateway Data Transfer & & 100 GB & \$4.50 \\
+Route 53 Hosted Zone & & 1 zone & \$0.50 \\
+Route 53 Queries & & 1M queries & \$0.40 \\
+VPC (Free) & & & \$0 \\
+\bottomrule
+\textbf{Total Networking} & & & \textbf{\$37.80} \\
+\bottomrule
+\end{tabular}
+\caption{Networking Costs}
+\end{table}
+
+\subsubsection{Security and Management Costs}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Service} & \textbf{Configuration} & \textbf{Usage} & \textbf{Cost/Month} \\
+\midrule
+Secrets Manager & & 7 secrets & \$3.50 \\
+AWS WAF & Web ACL + Rules & 1 ACL & \$5 \\
+CloudWatch Logs & & 10 GB & \$5 \\
+CloudWatch Metrics & & 150 metrics & \$1.50 \\
+CloudWatch Alarms & & 10 alarms & \$0 \\
+\bottomrule
+\textbf{Total Security/Management} & & & \textbf{\$15} \\
+\bottomrule
+\end{tabular}
+\caption{Security and Management Costs}
+\end{table}
+
+\subsubsection{Additional Services}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Service} & \textbf{Configuration} & \textbf{Usage} & \textbf{Cost/Month} \\
+\midrule
+Amazon SES & & 10,000 emails & \$1 \\
+Lambda (Rate Monitor) & & 720 invocations & \$0 \\
+EventBridge & & 720 rules & \$0 \\
+ECR Storage & & 5 GB & \$0.50 \\
+\bottomrule
+\textbf{Total Additional} & & & \textbf{\$1.50} \\
+\bottomrule
+\end{tabular}
+\caption{Additional Service Costs}
+\end{table}
+
+\subsection{Total Monthly Cost Summary}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lr}
+\toprule
+\textbf{Category} & \textbf{Cost/Month} \\
+\midrule
+Compute (ECS + ALB) & \$99.00 \\
+Database (RDS) & \$97.00 \\
+Storage \& CDN (S3 + CloudFront) & \$9.93 \\
+Networking (NAT + Route 53) & \$37.80 \\
+Security \& Management & \$15.00 \\
+Additional Services & \$1.50 \\
+\midrule
+\textbf{Total Estimated Monthly Cost} & \textbf{\$260.23} \\
+\bottomrule
+\end{tabular}
+\caption{Total Monthly Cost Breakdown}
+\end{table}
+
+\subsection{Cost Optimization Recommendations}
+
+\begin{enumerate}
+    \item \textbf{Reserved Instances}: Consider RDS Reserved Instances for 1-3 year commitment (30-40\% savings)
+    \item \textbf{S3 Lifecycle Policies}: Move old files to S3 Glacier for archival (80\% savings)
+    \item \textbf{Auto-Scaling}: Scale down services during low-traffic periods
+    \item \textbf{CloudFront Caching}: Optimize cache policies to reduce origin requests
+    \item \textbf{NAT Gateway}: Consider NAT Instance for development (lower cost, less reliable)
+    \item \textbf{Spot Instances}: Not applicable for Fargate, but consider for future EC2-based services
+    \item \textbf{Monitoring}: Review CloudWatch log retention (reduce from 30 days if not needed)
+\end{enumerate}
+
+\subsection{Scaling Cost Projections}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Traffic Level} & \textbf{Monthly Users} & \textbf{Estimated Cost} & \textbf{Notes} \\
+\midrule
+Low (Startup) & 1,000 & \$260 & Current estimate \\
+Medium & 10,000 & \$450 & +ECS tasks, +RDS size \\
+High & 100,000 & \$1,200 & +Read replicas, +ALB scaling \\
+Enterprise & 1,000,000+ & \$3,500+ & Multi-region, Aurora \\
+\bottomrule
+\end{tabular}
+\caption{Cost Projections by Scale}
+\end{table}
+
+\section{Why These AWS Services?}
+
+\subsection{Service Selection Rationale}
+
+\subsubsection{Why ECS Fargate Over Alternatives}
+\begin{itemize}
+    \item \textbf{vs. EC2}: No server management, automatic scaling, better resource utilization
+    \item \textbf{vs. EKS}: Lower complexity, lower cost, sufficient for current needs
+    \item \textbf{vs. Lambda}: Better for long-running services, WebSocket support, consistent performance
+    \item \textbf{vs. Elastic Beanstalk}: More control, better for microservices, container-native
+\end{itemize}
+
+\subsubsection{Why RDS Over Alternatives}
+\begin{itemize}
+    \item \textbf{vs. Aurora}: Lower cost, sufficient performance, can migrate later
+    \item \textbf{vs. Self-Managed}: Less operational overhead, automated backups, managed updates
+    \item \textbf{vs. DynamoDB}: Relational data model, Prisma ORM compatibility, complex queries
+\end{itemize}
+
+\subsubsection{Why S3 Over Alternatives}
+\begin{itemize}
+    \item \textbf{vs. EBS}: Shared access, unlimited scale, better for file uploads
+    \item \textbf{vs. EFS}: Lower cost, better for object storage, lifecycle policies
+    \item \textbf{vs. Local Storage}: Durability, scalability, backup built-in
+\end{itemize}
+
+\subsubsection{Why CloudFront Over Alternatives}
+\begin{itemize}
+    \item \textbf{vs. Other CDNs}: Better AWS integration, unified billing, competitive pricing
+    \item \textbf{vs. No CDN}: Lower latency globally, DDoS protection, cost-effective data transfer
+\end{itemize}
+
+\section{Security Considerations}
+
+\subsection{Network Security}
+\begin{itemize}
+    \item VPC with private subnets for services
+    \item Security groups with least-privilege access
+    \item NAT Gateway for controlled outbound access
+    \item No direct internet access to services
+\end{itemize}
+
+\subsection{Data Security}
+\begin{itemize}
+    \item Encryption at rest (RDS, S3, EBS)
+    \item Encryption in transit (TLS/SSL)
+    \item Secrets Manager for sensitive data
+    \item IAM roles with least privilege
+\end{itemize}
+
+\subsection{Application Security}
+\begin{itemize}
+    \item AWS WAF for DDoS and attack protection
+    \item Rate limiting at API Gateway
+    \item Input validation in all services
+    \item Audit logging for compliance
+\end{itemize}
+
+\section{Monitoring and Observability}
+
+\subsection{CloudWatch Metrics}
+\begin{itemize}
+    \item ECS task CPU and memory utilization
+    \item ALB request counts and latency
+    \item RDS connection counts and query performance
+    \item Lambda invocation metrics
+    \item Custom application metrics
+\end{itemize}
+
+\subsection{CloudWatch Logs}
+\begin{itemize}
+    \item Centralized logging from all services
+    \item Log retention policies
+    \item Log insights for querying
+    \item Correlation ID tracking
+\end{itemize}
+
+\subsection{Alarms}
+\begin{itemize}
+    \item High CPU/memory utilization
+    \item Database connection issues
+    \item High error rates
+    \item Service unavailability
+    \item Cost threshold alerts
+\end{itemize}
+
+\section{Disaster Recovery and Backup}
+
+\subsection{Database Backups}
+\begin{itemize}
+    \item Automated daily backups (RDS)
+    \item 7-day retention (configurable)
+    \item Point-in-time recovery
+    \item Multi-AZ for high availability
+\end{itemize}
+
+\subsection{File Storage}
+\begin{itemize}
+    \item S3 versioning (optional)
+    \item Cross-region replication (optional)
+    \item Lifecycle policies for archival
+\end{itemize}
+
+\subsection{Infrastructure as Code}
+\begin{itemize}
+    \item Recommended: Terraform or AWS CDK
+    \item Version-controlled infrastructure
+    \item Reproducible deployments
+    \item Environment parity (dev/staging/prod)
+\end{itemize}
+
+\section{Conclusion}
+
+This document outlines a comprehensive AWS deployment strategy for the Kwalifai Mortgage Platform. The recommended architecture provides:
+
+\begin{itemize}
+    \item \textbf{Scalability}: Auto-scaling capabilities for all services
+    \item \textbf{Reliability}: Multi-AZ deployment, automated backups
+    \item \textbf{Security}: Network isolation, encryption, WAF protection
+    \item \textbf{Cost-Effectiveness}: Estimated \$260/month for startup scale
+    \item \textbf{Maintainability}: Managed services reduce operational overhead
+    \item \textbf{Future-Proof}: Architecture supports growth and additional features
+\end{itemize}
+
+The selected AWS services provide the optimal balance of features, cost, and operational simplicity for a microservices-based mortgage platform. The architecture can scale from startup to enterprise levels while maintaining cost efficiency and operational excellence.
+
+\section{Appendices}
+
+\subsection{Appendix A: Service Ports}
+\begin{itemize}
+    \item Frontend: 3000
+    \item API Gateway: 3001
+    \item Auth Service: 3002
+    \item Calculator Service: 3003
+    \item Rate Alert Service: 3004
+    \item Statement Analysis Service: 3005
+    \item AI Service: 3006
+\end{itemize}
+
+\subsection{Appendix B: Environment Variables}
+Key environment variables needed for deployment:
+\begin{itemize}
+    \item \texttt{DATABASE\_URL}
+    \item \texttt{OPENAI\_API\_KEY}
+    \item \texttt{JWT\_SECRET}
+    \item \texttt{AWS\_S3\_BUCKET}
+    \item \texttt{AWS\_SES\_REGION}
+    \item Service-specific ports and URLs
+\end{itemize}
+
+\subsection{Appendix C: Useful AWS CLI Commands}
+\begin{lstlisting}
+# Check ECS service status
+aws ecs describe-services --cluster my-cluster --services my-service
+
+# View CloudWatch logs
+aws logs tail /ecs/my-service --follow
+
+# Check RDS instance status
+aws rds describe-db-instances --db-instance-identifier my-db
+
+# List S3 objects
+aws s3 ls s3://my-bucket/ --recursive
+\end{lstlisting}
+
+\end{document}

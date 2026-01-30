@@ -1,0 +1,165 @@
+/* --- 1. GLOBAL STYLES --- */
+body {
+    font-family: 'Segoe UI', 'Roboto', Helvetica, Arial, sans-serif;
+    background-color: #ffffff;
+    color: #333;
+    margin: 0;
+    padding: 40px;
+    box-sizing: border-box;
+}
+
+.main-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 30px;
+    background: #fff;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+}
+
+/* --- 2. HEADER SECTION --- */
+.header-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 40px;
+}
+
+/* Date Picker Area */
+.date-display {
+    display: flex;
+    align-items: center;
+    border: 1px solid #d1d1d1;
+    border-radius: 4px;
+    padding: 5px 10px;
+    background: #fff;
+}
+
+.date-display i { color: #888; margin-right: 10px; font-size: 16px; }
+
+/* The Actual Date Inputs */
+.custom-date-input {
+    border: none;
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+    outline: none;
+    width: 95px;
+    cursor: pointer;
+}
+.date-separator { margin: 0 5px; color: #888; font-weight: 400; }
+
+.range-tabs { display: flex; gap: 25px; }
+.tab-btn {
+    border: none;
+    background: none;
+    color: #999;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    padding-bottom: 8px;
+    position: relative;
+}
+.tab-btn:hover { color: #555; }
+.tab-btn.active { color: #333; font-weight: 700; }
+.tab-btn.active::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -1px;
+    width: 100%;
+    height: 3px;
+    background-color: #3498db;
+}
+
+/* Social Icons & Print Button */
+.social-icons { display: flex; gap: 10px; }
+
+.icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #888;
+    cursor: pointer;
+    transition: .2s;
+}
+
+/* Active Button (Print) Hover State */
+.icon-btn:not(.disabled):hover { 
+    background-color: #e0e0e0; 
+    color: #555; 
+}
+
+/* Disabled State for Social Icons */
+.icon-btn.disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    pointer-events: none; /* Prevents clicking */
+}
+
+/* --- 3. CHART AREA --- */
+.chart-container {
+    position: relative;
+    height: 400px;
+    width: 100%;
+    margin-bottom: 50px;
+}
+
+/* --- 4. FILTERS SECTION --- */
+.filters-section {
+    display: flex;
+    justify-content: space-between;
+    border-top: 1px solid #e0e0e0;
+    padding-top: 30px;
+    gap: 20px;
+}
+.filter-col { flex: 1; }
+.col-header {
+    font-size: 13px;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 10px;
+}
+
+/* CUSTOM TOGGLE SWITCH */
+.toggle-item { display: flex; align-items: center; margin-bottom: 15px; cursor: pointer; }
+.toggle-item input { display: none; }
+.switch {
+    width: 44px;
+    height: 24px;
+    background-color: #e0e0e0;
+    border-radius: 24px;
+    position: relative;
+    margin-right: 15px;
+    transition: background-color 0.3s;
+}
+.switch::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background-color: white;
+    border-radius: 50%;
+    transition: transform 0.3s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.toggle-item input:checked + .switch { background-color: #c0392b; }
+.toggle-item input:checked + .switch::after { transform: translateX(20px); }
+.label-text { font-size: 15px; color: #333; }
+
+/* Print specific styles to hide buttons when printing */
+@media print {
+    .header-controls, .filters-section { display: none; }
+    .main-container { border: none; box-shadow: none; }
+}

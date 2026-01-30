@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Market Rates Interface</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1.0.0/dist/chartjs-adapter-moment.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        /* --- 1. GLOBAL STYLES --- */
+        body {
+            font-family: 'Segoe UI', 'Roboto', Helvetica, Arial, sans-serif;
+            background-color: #ffffff;
+            color: #333;
+            margin: 0;
+            padding: 40px;
+            box-sizing: border-box;
+        }
+
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 30px;
+            background: #fff;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+        }
+
+        /* --- 2. HEADER SECTION --- */
+        .header-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+        }
+
+        /* Date Picker Area */
+        .date-display {
+            display: flex;
+            align-items: center;
+            border: 1px solid #d1d1d1;
+            border-radius: 4px;
+            padding: 5px 10px; /* Thinner padding */
+            background: #fff;
+        }
+        
+        .date-display i { color: #888; margin-right: 10px; font-size: 16px; }
+
+        /* The Actual Date Inputs */
+        .custom-date-input {
+            border: none;
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            color: #333;
+            outline: none;
+            width: 85px; /* Fixed width for alignment */
+            cursor: pointer;
+        }
+        .date-separator { margin: 0 5px; color: #888; font-weight: 400; }
+
+        .range-tabs { display: flex; gap: 25px; }
+        .tab-btn {
+            border: none;
+            background: none;
+            color: #999;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            padding-bottom: 8px;
+            position: relative;
+        }
+        .tab-btn:hover { color: #555; }
+        .tab-btn.active { color: #333; font-weight: 700; }
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: -1px;
+            width: 100%;
+            height: 3px;
+            background-color: #3498db;
+        }
+
+        .social-icons { display: flex; gap: 10px; }
+        .icon-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background-color: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #888;
+            cursor: pointer;
+            transition: .2s;
+        }
+        .icon-btn:hover { background-color: #e0e0e0; color: #555; }
+
+        /* --- 3. CHART AREA --- */
+        .chart-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
+            margin-bottom: 50px;
+        }
+
+        /* --- 4. FILTERS SECTION --- */
+        .filters-section {
+            display: flex;
+            justify-content: space-between;
+            border-top: 1px solid #e0e0e0;
+            padding-top: 30px;
+            gap: 20px;
+        }
+        .filter-col { flex: 1; }
+        .col-header {
+            font-size: 13px;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 10px;
+        }
+
+        /* CUSTOM TOGGLE SWITCH */
+        .toggle-item { display: flex; align-items: center; margin-bottom: 15px; cursor: pointer; }
+        .toggle-item input { display: none; }
+        .switch {
+            width: 44px;
+            height: 24px;
+            background-color: #e0e0e0;
+            border-radius: 24px;
+            position: relative;
+            margin-right: 15px;
+            transition: background-color 0.3s;
+        }
+        .switch::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background-color: white;
+            border-radius: 50%;
+            transition: transform 0.3s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        .toggle-item input:checked + .switch { background-color: #c0392b; }
+        .toggle-item input:checked + .switch::after { transform: translateX(20px); }
+        .label-text { font-size: 15px; color: #333; }
+    </style>
+</head>
+<body>
+
+<div class="main-container">
+
+    <div class="header-controls">
+        <div class="date-display">
+            <i class="far fa-calendar-alt"></i>
+            <input type="date" id="start-date" class="custom-date-input" onchange="applyCustomDate()">
+            <span class="date-separator">-</span>
+            <input type="date" id="end-date" class="custom-date-input" onchange="applyCustomDate()">
+        </div>
+
+        <div class="range-tabs">
+            <button class="tab-btn active" onclick="setRange(1, this)">1M</button>
+            <button class="tab-btn" onclick="setRange(3, this)">3M</button>
+            <button class="tab-btn" onclick="setRange(6, this)">6M</button>
+            <button class="tab-btn" onclick="setRange(12, this)">1Y</button>
+            <button class="tab-btn" onclick="setRange(24, this)">2Y</button>
+        </div>
+
+        <div class="social-icons">
+            <div class="icon-btn"><i class="fas fa-print"></i></div>
+            <div class="icon-btn"><i class="fab fa-linkedin-in"></i></div>
+            <div class="icon-btn"><i class="fab fa-facebook-f"></i></div>
+            <div class="icon-btn"><i class="fab fa-twitter"></i></div>
+            <div class="icon-btn"><i class="far fa-envelope"></i></div>
+        </div>
+    </div>
+
+    <div class="chart-container">
+        <canvas id="ratesChart"></canvas>
+    </div>
+
+    <div class="filters-section">
+        <div class="filter-col">
+            <div class="col-header">Primary Mortgage Rates</div>
+            <div id="col1-controls"></div>
+        </div>
+        <div class="filter-col">
+            <div class="col-header">30-Yr. Conforming - LTV <= 80</div>
+            <div id="col2-controls"></div>
+        </div>
+        <div class="filter-col">
+            <div class="col-header">30-Yr. Conforming - LTV > 80</div>
+            <div id="col3-controls"></div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // --- API & DATA SETUP ---
+    const API_KEY = '8cae904855af46d8a82e98440b4e88e7'; 
+    
+    // Series Config
+    const seriesConfig = [
+        // Col 1
+        { id: 'OBMMIC30YF', label: '30-Yr. Conforming', col: 1, color: '#333', visible: false },
+        { id: 'OBMMIJUMBO30YF', label: '30-Yr. Jumbo', col: 1, color: '#555', visible: false },
+        { id: 'OBMMIFHA30YF', label: '30-Yr. FHA', col: 1, color: '#777', visible: false },
+        { id: 'OBMMIVA30YF', label: '30-Yr. VA', col: 1, color: '#888', visible: false },
+        { id: 'OBMMIUSDA30YF', label: '30-Yr. USDA', col: 1, color: '#999', visible: false },
+        { id: 'OBMMIC15YF', label: '15-Yr. Conforming', col: 1, color: '#aaa', visible: false },
+        // Col 2
+        { id: 'OBMMIC30YFLVLE80FGE740', label: 'FICO > 740', col: 2, color: '#27ae60', visible: false },
+        { id: 'OBMMIC30YFLVLE80FB720A739', label: 'FICO 720 - 739', col: 2, color: '#2ecc71', visible: false },
+        { id: 'OBMMIC30YFLVLE80FB700A719', label: 'FICO 700 - 719', col: 2, color: '#58d68d', visible: false },
+        { id: 'OBMMIC30YFLVLE80FB680A699', label: 'FICO 680 - 699', col: 2, color: '#82e0aa', visible: false },
+        { id: 'OBMMIC30YFLVLE80FLT680', label: 'FICO < 680', col: 2, color: '#abebc6', visible: false },
+        // Col 3
+        { id: 'OBMMIC30YFLVGT80FGE740', label: 'FICO > 740', col: 3, color: '#741b1b', visible: true }, // Default ON
+        { id: 'OBMMIC30YFLVGT80FB720A739', label: 'FICO 720 - 739', col: 3, color: '#c0392b', visible: false },
+        { id: 'OBMMIC30YFLVGT80FB700A719', label: 'FICO 700 - 719', col: 3, color: '#d98880', visible: false },
+        { id: 'OBMMIC30YFLVGT80FB680A699', label: 'FICO 680 - 699', col: 3, color: '#e6b0aa', visible: false },
+        { id: 'OBMMIC30YFLVGT80FLT680', label: 'FICO < 680', col: 3, color: '#f2d7d5', visible: false },
+    ];
+
+    // --- RENDER TOGGLES ---
+    function createControls() {
+        seriesConfig.forEach((item, index) => {
+            const html = `
+                <label class="toggle-item">
+                    <input type="checkbox" id="chk-${index}" ${item.visible ? 'checked' : ''} onchange="toggleSeries(${index})">
+                    <div class="switch"></div>
+                    <span class="label-text">${item.label}</span>
+                </label>
+            `;
+            document.getElementById(`col${item.col}-controls`).innerHTML += html;
+        });
+    }
+    createControls();
+
+    // --- CHART SETUP ---
+    const ctx = document.getElementById('ratesChart').getContext('2d');
+    const chart = new Chart(ctx, {
+        type: 'line',
+        data: { datasets: [] },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'nearest', 
+                axis: 'x',       
+                intersect: false 
+            },
+            plugins: { 
+                legend: { display: false },
+                tooltip: { 
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)', 
+                    titleColor: '#333', 
+                    bodyColor: '#333', 
+                    borderColor: '#ccc', 
+                    borderWidth: 1,
+                    displayColors: true,
+                    padding: 10,
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': ' + context.parsed.y.toFixed(3) + '%';
+                        }
+                    }
+                }
+            },
+            elements: {
+                line: { tension: 0, borderWidth: 2 }, 
+                point: { radius: 0, hoverRadius: 6, hitRadius: 10 }
+            },
+            scales: {
+                x: { 
+                    type: 'time', 
+                    time: { unit: 'week', tooltipFormat: 'MMM D, YYYY' },
+                    grid: { display: false, drawBorder: false },
+                    ticks: { color: '#888', font: { size: 11 } }
+                },
+                y: { 
+                    position: 'left',
+                    grid: { color: '#f0f0f0', borderDash: [] },
+                    ticks: { callback: (val) => val.toFixed(3) + '%', color: '#888', font: { size: 11 } },
+                    border: { display: false }
+                }
+            }
+        }
+    });
+
+    // --- LOGIC ---
+    async function fetchAllData() {
+        const CORS_PROXY = "https://corsproxy.io/?"; 
+        const BASE_URL = "https://api.stlouisfed.org/fred/series/observations";
+        
+        // Fetch 5 Years of history so custom dates work well
+        const startDate = moment().subtract(5, 'years').format('YYYY-MM-DD'); 
+
+        const fetchPromises = seriesConfig.map(async (series, index) => {
+            const url = `${CORS_PROXY}${encodeURIComponent(`${BASE_URL}?series_id=${series.id}&api_key=${API_KEY}&file_type=json&observation_start=${startDate}`)}`; 
+            try {
+                const response = await fetch(url);
+                const json = await response.json();
+                if (!json.observations) return null;
+                const dataPoints = json.observations.map(obs => ({ x: obs.date, y: parseFloat(obs.value) })).filter(pt => !isNaN(pt.y));
+                return {
+                    label: series.label,
+                    data: dataPoints,
+                    borderColor: series.color,
+                    backgroundColor: series.color,
+                    hidden: !series.visible
+                };
+            } catch (err) { return null; }
+        });
+
+        const datasets = await Promise.all(fetchPromises);
+        chart.data.datasets = datasets.filter(d => d !== null);
+        
+        // Initial Range: 1 Month
+        setRange(1, document.querySelector('.range-tabs button'));
+    }
+
+    // --- FIX: BUTTONS NOW UPDATE DATE BOXES ---
+    function setRange(months, btn) {
+        // 1. Update Buttons
+        if(btn) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+        
+        // 2. Calculate Dates
+        const end = moment();
+        const start = moment().subtract(months, 'months');
+        
+        // 3. Update Chart
+        chart.options.scales.x.min = start.format('YYYY-MM-DD');
+        chart.options.scales.x.max = end.format('YYYY-MM-DD');
+        chart.update();
+
+        // 4. FIX: Update the Date Input Boxes to match
+        document.getElementById('start-date').value = start.format('YYYY-MM-DD');
+        document.getElementById('end-date').value = end.format('YYYY-MM-DD');
+    }
+
+    // --- FIX: CUSTOM DATE TRIGGER ---
+    function applyCustomDate() {
+        const startVal = document.getElementById('start-date').value;
+        const endVal = document.getElementById('end-date').value;
+
+        // Only update if both dates are picked
+        if(startVal && endVal) {
+            const start = moment(startVal);
+            const end = moment(endVal);
+
+            // Update Chart
+            chart.options.scales.x.min = start.format('YYYY-MM-DD');
+            chart.options.scales.x.max = end.format('YYYY-MM-DD');
+            chart.update();
+
+            // FIX: Deselect all "1M, 3M" buttons so user knows they are in custom mode
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        }
+    }
+
+    function toggleSeries(index) {
+        const meta = chart.getDatasetMeta(index);
+        if(meta) {
+            meta.hidden = !document.getElementById(`chk-${index}`).checked;
+            chart.update();
+        }
+    }
+
+    fetchAllData();
+</script>
+
+</body>
+</html>
