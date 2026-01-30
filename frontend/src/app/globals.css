@@ -1,0 +1,262 @@
+/**
+ * @file globals.css
+ * @author Balaji Koneti
+ * @linkedin https://www.linkedin.com/in/balaji-koneti/
+ * @github https://github.com/KonetiBalaji/kwalifai
+ * 
+ * Copyright (C) 2026 Balaji Koneti
+ * All Rights Reserved.
+ * 
+ * This software is proprietary and confidential.
+ * Unauthorized copying, modification, distribution, or use is prohibited.
+ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Gilroy font - Add @font-face if you have font files, or use a web font service */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  * {
+    font-family: "Gilroy", sans-serif;
+  }
+  
+  body {
+    @apply text-gray-900 bg-white;
+    font-family: "Gilroy", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer utilities {
+  /* Rounded rectangle border animation */
+  .card-hover-border {
+    position: relative;
+  }
+
+  .card-hover-border::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    border-radius: inherit;
+    border: 2px solid transparent;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .card-hover-border:hover::before {
+    opacity: 1;
+    animation: borderDraw 1.2s ease-out forwards;
+  }
+
+  @keyframes borderDraw {
+    0% {
+      border-top-color: rgb(37, 99, 235); /* blue-600 to match Register button */
+      border-right-color: transparent;
+      border-bottom-color: transparent;
+      border-left-color: transparent;
+    }
+    25% {
+      border-top-color: rgb(37, 99, 235);
+      border-right-color: rgb(37, 99, 235);
+      border-bottom-color: transparent;
+      border-left-color: transparent;
+    }
+    50% {
+      border-top-color: rgb(37, 99, 235);
+      border-right-color: rgb(37, 99, 235);
+      border-bottom-color: rgb(37, 99, 235);
+      border-left-color: transparent;
+    }
+    75% {
+      border-top-color: rgb(37, 99, 235);
+      border-right-color: rgb(37, 99, 235);
+      border-bottom-color: rgb(37, 99, 235);
+      border-left-color: rgb(37, 99, 235);
+    }
+    100% {
+      border-color: rgb(37, 99, 235);
+    }
+  }
+
+  /* Number fill animation */
+  .number-outline {
+    -webkit-text-stroke: 2px rgb(219, 234, 254);
+    color: transparent;
+    position: relative;
+    display: inline-block;
+  }
+
+  .number-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to right, #86E0CB, #2563eb);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    display: inline-block;
+    overflow: hidden;
+    clip-path: inset(100% 0 0 0);
+  }
+
+  .number-fill-active {
+    animation: fillFromTop 0.6s ease-out forwards;
+  }
+
+  .number-fill-complete {
+    clip-path: inset(0 0 0 0);
+    animation: none;
+  }
+
+  @keyframes fillFromTop {
+    0% {
+      clip-path: inset(100% 0 0 0);
+    }
+    100% {
+      clip-path: inset(0 0 0 0);
+    }
+  }
+
+  /* Heading animation */
+  .animate-fade-in {
+    animation: fadeIn 0.8s ease-out forwards;
+    opacity: 0;
+  }
+
+  .animate-dot-1 {
+    animation: fadeIn 0.6s ease-out 0.3s forwards;
+    opacity: 0;
+  }
+
+  .animate-dot-2 {
+    animation: fadeIn 0.6s ease-out 0.6s forwards;
+    opacity: 0;
+  }
+
+  @keyframes fadeIn {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+
+  /* Slide up animation for Lowi widget drawer */
+  @keyframes slideUp {
+    0% {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    100% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  .animate-\[slideUp_0\.3s_ease-out\] {
+    animation: slideUp 0.3s ease-out;
+  }
+
+  /* Pulsating ring animation for Lowi AI button */
+  @keyframes pulse-ring {
+    0% {
+      transform: scale(1);
+      opacity: 0.75;
+    }
+    50% {
+      transform: scale(1.2);
+      opacity: 0.5;
+    }
+    100% {
+      transform: scale(1.4);
+      opacity: 0;
+    }
+  }
+
+  .animate-pulse-ring {
+    animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  /* Chat panel animations */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideInFromBottom {
+    from {
+      transform: translateY(10px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideInFromTop {
+    from {
+      transform: translateY(-10px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  .animate-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  .fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  .slide-in-from-bottom-2 {
+    animation: slideInFromBottom 0.3s ease-out;
+  }
+
+  .slide-in-from-top-2 {
+    animation: slideInFromTop 0.3s ease-out;
+  }
+
+  /* Slider thumb styling - white with blue border */
+  input[type="range"].slider::-webkit-slider-thumb {
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: white;
+    border: 2px solid #1d4ed8;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  }
+
+  input[type="range"].slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: white;
+    border: 2px solid #1d4ed8;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  }
+}
