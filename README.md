@@ -1,6 +1,6 @@
 <!--
 @file README.md
-@author Balaji Koneti
+@author Balaji Koneti — A Master Student
 @linkedin https://www.linkedin.com/in/balaji-koneti/
 @github https://github.com/KonetiBalaji/kwalifai
 
@@ -14,6 +14,17 @@ Unauthorized copying, modification, distribution, or use is prohibited.
 # Mortgage Platform Monorepo
 
 A microservices-based mortgage platform with smart calculators, rate alerts, and AI-powered mortgage assistance.
+
+---
+
+## © Copyright & Legal Notice
+
+**This code is developed by BALAJI KONETI — A Master Student.**
+
+You may **clone this repository and use this repository** as permitted. **Anyone who uses this repository in an unauthorized manner or in violation of its terms may strictly face legal consequences.**
+
+---
+
 
 ## Architecture
 
