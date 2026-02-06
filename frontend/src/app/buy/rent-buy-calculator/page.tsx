@@ -555,8 +555,8 @@ export default function RentBuyCalculatorPage() {
                                 borderRadius: 8,
                                 borderColor: '#E5E7EB',
                               }}
-                              formatter={(value: number) => formatCurrency(value)}
-                              labelFormatter={(label: number) => `Year ${label}`}
+                              formatter={(value) => formatCurrency(Number(value) || 0)}
+                              labelFormatter={(label) => `Year ${Number(label) || 0}`}
                             />
                             <Legend
                               wrapperStyle={{ paddingTop: '10px' }}

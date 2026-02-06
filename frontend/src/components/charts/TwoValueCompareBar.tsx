@@ -77,7 +77,7 @@ export default function TwoValueCompareBar({
               borderRadius: 8,
               borderColor: '#E5E7EB',
             }}
-            formatter={(value: number, _name: string) => [format(value), 'Value']}
+            formatter={(value, _name) => [format(Number(value) || 0), 'Value']}
           />
           <Bar dataKey="value" radius={[4, 4, 0, 0]} fill="#4F46E5" maxBarSize={80} />
         </BarChart>

@@ -68,11 +68,11 @@ export default function PrincipalInterestStacked({
               borderRadius: 8,
               borderColor: '#E5E7EB',
             }}
-            formatter={(value: number, name: string) => [
-              `$${value.toLocaleString()}`,
+            formatter={(value, name) => [
+              `$${(Number(value) || 0).toLocaleString()}`,
               name === 'principal' ? 'Principal' : 'Interest',
             ]}
-            labelFormatter={(label: number) => `Payment #${label}`}
+            labelFormatter={(label) => `Payment #${Number(label) || 0}`}
           />
           <Legend
             verticalAlign="top"

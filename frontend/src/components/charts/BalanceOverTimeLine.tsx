@@ -79,8 +79,8 @@ export default function BalanceOverTimeLine({
               borderRadius: 8,
               borderColor: '#E5E7EB',
             }}
-            formatter={(value: number) => [`$${value.toLocaleString()}`, 'Balance']}
-            labelFormatter={(label: number) => `Payment #${label}`}
+            formatter={(value) => [`$${(Number(value) || 0).toLocaleString()}`, 'Balance']}
+            labelFormatter={(label) => `Payment #${Number(label) || 0}`}
           />
           <Line
             type="monotone"

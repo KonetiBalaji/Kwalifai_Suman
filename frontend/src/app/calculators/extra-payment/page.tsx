@@ -366,14 +366,14 @@ export default function ExtraPaymentCalculatorPage() {
                               borderRadius: 8,
                               borderColor: '#E5E7EB',
                             }}
-                            formatter={(value: number, name: string) => [
-                              `$${value.toLocaleString()}`,
+                            formatter={(value, name) => [
+                              `$${(Number(value) || 0).toLocaleString()}`,
                               name === 'withoutExtra'
                                 ? 'Balance without extra'
                                 : 'Balance with extra',
                             ]}
-                            labelFormatter={(label: number) =>
-                              `Payment #${label}`
+                            labelFormatter={(label) =>
+                              `Payment #${Number(label) || 0}`
                             }
                           />
                           <Line

@@ -79,7 +79,7 @@ export default function PaymentComparisonBar({
               borderRadius: 8,
               borderColor: '#E5E7EB',
             }}
-            formatter={(value: number) => [`$${value.toLocaleString()}`, 'Monthly payment']}
+            formatter={(value) => [`$${(Number(value) || 0).toLocaleString()}`, 'Monthly payment']}
           />
           <Bar
             dataKey="payment"
