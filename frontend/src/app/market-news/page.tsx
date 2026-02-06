@@ -19,7 +19,7 @@ export default function MarketNewsPage() {
       title="Market News"
       subtitle="Market news content will be implemented here."
     >
-      {/* Future market news content will go here */}
+      <p className="text-gray-600">Market news content will be implemented here.</p>
     </PageShell>
   );
 }

@@ -21,7 +21,7 @@ interface PageShellProps {
   subtitle?: string;
   ctaLabel?: string;
   ctaHref?: string;
-  children: ReactNode;
+  children?: ReactNode;
 }
 
 export default function PageShell({ title, subtitle, ctaLabel, ctaHref, children }: PageShellProps) {
