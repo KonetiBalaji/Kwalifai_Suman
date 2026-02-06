@@ -19,6 +19,17 @@ import CalculatorPageShell from '../../components/calculators/CalculatorPageShel
 import BuyNavigation from '../../components/buy/BuyNavigation';
 import { ChevronDown, Calculator, MapPin } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import {
+  ResponsiveContainer,
+  LineChart,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  ReferenceLine,
+  Line,
+} from 'recharts';
 
 export default function BuyPage() {
   const router = useRouter();
