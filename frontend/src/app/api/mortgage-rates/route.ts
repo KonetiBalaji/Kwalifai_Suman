@@ -13,6 +13,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 const FRED_API_KEY = '8cae904855af46d8a82e98440b4e88e7';
 const FRED_BASE_URL = 'https://api.stlouisfed.org/fred/series/observations';
 
