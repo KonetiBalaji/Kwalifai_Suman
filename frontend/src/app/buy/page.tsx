@@ -1725,8 +1725,8 @@ function RentVsBuyCalculator() {
                           borderRadius: 8,
                           borderColor: '#E5E7EB',
                         }}
-                        formatter={(value) => formatCurrency(value ?? 0)}
-                        labelFormatter={(label) => `Year ${label ?? 0}`}
+                        formatter={(value) => formatCurrency(Number(value) || 0)}
+                        labelFormatter={(label) => `Year ${Number(label) || 0}`}
                       />
                       <Legend
                         wrapperStyle={{ paddingTop: '10px' }}
