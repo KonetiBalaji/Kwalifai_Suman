@@ -286,13 +286,16 @@ export default function MortgageRatesDashboard() {
   }, [startDate, endDate, filters]);
 
   const toggleFilter = (category: keyof FilterState, key: string) => {
-    setFilters((prev) => ({
-      ...prev,
-      [category]: {
-        ...prev[category],
-        [key]: !prev[category][key as keyof typeof prev[category]],
-      },
-    }));
+    setFilters((prev) => {
+      const current = prev[category] as Record<string, boolean>;
+      return {
+        ...prev,
+        [category]: {
+          ...current,
+          [key]: !current[key],
+        },
+      };
+    });
   };
 
   const handleShare = (platform: string) => {

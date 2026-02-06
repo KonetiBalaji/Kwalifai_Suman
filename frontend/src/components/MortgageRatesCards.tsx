@@ -222,8 +222,8 @@ export default function MortgageRatesCards() {
             color: '#6b7280',
             font: { size: 11 },
           },
-          min: startDate ?? undefined,
-          max: endDate ?? undefined,
+          min: startDate ? startDate.getTime() : undefined,
+          max: endDate ? endDate.getTime() : undefined,
         },
         y: {
           grid: {
