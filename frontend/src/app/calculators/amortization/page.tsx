@@ -135,10 +135,7 @@ export default function AmortizationCalculatorPage() {
   const hasResult = !!result;
   const firstRows = result ? result.schedule.slice(0, 12) : [];
 
-  const timeSavedMonths =
-    result && result.originalTermMonths && result.actualTermMonths
-      ? result.originalTermMonths - result.actualTermMonths
-      : 0;
+  const timeSavedMonths = result ? result.summary.timeSaved : 0;
 
   return (
     <PageShell>
@@ -273,7 +270,7 @@ export default function AmortizationCalculatorPage() {
                     },
                     {
                       label: 'Months to payoff',
-                      value: `${result.actualTermMonths} months`,
+                      value: `${result.summary.totalPayments} months`,
                       helperText:
                         timeSavedMonths > 0
                           ? `${timeSavedMonths} months faster than original term.`
