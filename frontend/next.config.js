@@ -14,7 +14,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  transpilePackages: ['@mortgage-platform/shared'],
   env: {
     API_GATEWAY_URL: process.env.API_GATEWAY_URL || 'http://localhost:3001',
     AUTH_SERVICE_URL: process.env.AUTH_SERVICE_URL || 'http://localhost:3002',
